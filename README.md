@@ -35,13 +35,13 @@ http "http://domain/api/push/byusername?user_names=18988888881,18988888888&title
 ### 参数说明
 
 - user_names: 支持多手机号发送相同的报警，用逗号分隔
-- title：报警的标题，不传默认为 ’公司监控报警通知‘
+- title：报警的标题，不传默认为 '公司监控报警通知'
 - machine： 报警机器
 - moniterkey： 监控项，如：api/home/hotsale time > 10
 - state: 服务状态 ，如 ERROR，WARN，INFO
 - output：监控输出
 - remark：注释
-- url: 点击消息调整的链接
+- url: 点击消息跳转的链接
 
 ### 返回
 
