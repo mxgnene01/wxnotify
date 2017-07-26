@@ -1,5 +1,18 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
+# This piece of code is written by
+#    Meng xiangguo <mxgnene01@gmail.com>
+# with love and passion!
+#
+#        H A P P Y    H A C K I N G !
+#              _____               ______
+#     ____====  ]OO|_n_n__][.      |    |]
+#    [________]_|__|________)<     |MENG|
+#     oo    oo  'oo OOOO-| oo\_   ~o~~~o~'
+# +--+--+--+--+--+--+--+--+--+--+--+--+--+
+#                        2017/7/24  下午6:55
+
 from wxnotify.apps.notify import services
 import wxnotify.apps.user.services as user_services
 from wxnotify.common.route import route
@@ -7,6 +20,9 @@ from wxnotify.common import controller
 from tornado.gen import coroutine
 import datetime
 import json
+import logging
+
+BIZLOG = logging.getLogger("wxnotify.business")
 
 @route('/api/wechat/get_access_token')
 class AccessTokenController(controller.APIBaseController):
@@ -24,7 +40,7 @@ class OpenidNotifySendController(controller.APIBaseController):
     @coroutine
     def get(self, openid):
         openid = self.get_argument('openid')
-        title = self.get_argument('title')
+        title = self.get_argument('title', u'公司监控报警通知')
         time = self.get_argument('time', str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
         machine = self.get_argument('machine')
         moniterkey = self.get_argument('moniterkey')
@@ -47,7 +63,7 @@ class UserNotifySendController(controller.APIBaseController):
     @coroutine
     def get(self):
         user_names = self.get_argument('user_names')
-        title = self.get_argument('title')
+        title = self.get_argument('title', u'公司监控报警通知')
         time = self.get_argument('time', str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
         machine = self.get_argument('machine')
         moniterkey = self.get_argument('moniterkey')
@@ -59,16 +75,14 @@ class UserNotifySendController(controller.APIBaseController):
         sec = 0
 
         for user_name in user_names.split(','):
-            data = yield user_services.get_user_info(user_name)
-            openid = data[0].get('openid')
-            code, ret = yield services.send_notify(openid, title, time, machine, moniterkey, state, output, remark, url )
-            if code:
+            openid = yield user_services.get_user_info(user_name)
+            if openid:
+                code, ret = yield services.send_notify(openid, title, time, machine, moniterkey, state, output, remark, url )
                 sec = sec + 1
+            else:
+                BIZLOG.info('cant find user_name %s' % user_name)
 
-
-        if len(user_names.split(',')) != sec:
-            self.reply(dict(code=5003,
-                            reason="push notify hash error"))
-            return
+        if sec == 0:
+            self.reply(dict(code=5003,reason="push notify hash error"))
         else:
             self.reply(dict(code=0, original=json.loads(ret)))

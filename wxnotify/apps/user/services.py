@@ -21,6 +21,7 @@ from wxnotify.apps.notify.services import find_access_token
 import logging
 import json
 from wxnotify.common.postgres import with_postgres
+from wxnotify.common.redis import with_redis
 from wxnotify.common.database import fetchone_as_dict
 
 tornado_define('get_user_list_url',
@@ -34,13 +35,50 @@ tornado_define('get_user_detail_url',
 BIZLOG = logging.getLogger("wxnotify.business")
 
 
+def redis_key(key):
+    return 'wx_username:%s' % key
+
+
+@coroutine
+def get_user_info(user_name):
+    openid = yield get_user_info_from_redis(user_name)
+    if not openid:
+        data = yield get_user_info_from_db(user_name)
+        openid = data.get('openid')
+        if data:
+            yield save(user_name, openid)
+
+    raise Return(openid)
+
+@coroutine
+@with_redis('master')
+def get_user_info_from_redis(redis, user_name):
+    openid = yield Task(redis.get, redis_key(user_name))
+    raise Return(openid)
+
+
 @coroutine
 @with_postgres('master')
-def get_user_info(db, user_name):
+def get_user_info_from_db(db, user_name):
     c = yield db.execute("select openid from dl_user_weixin where user_name = '%s'" % user_name)
     openid = fetchone_as_dict(c)
 
     raise Return(openid)
+
+@coroutine
+@with_redis('master')
+def save(redis, user_name, openid):
+    pipeline = redis.pipeline()
+    pipeline.set(redis_key(user_name), openid)
+    pipeline.expire(redis_key(user_name), 86400)
+    ret = yield Task(pipeline.send)
+
+    BIZLOG.debug("set redis returns: %s" % ret)
+    if ret[0] == 'OK':
+        BIZLOG.info("openid code saved")
+        raise Return(True)
+    else:
+        raise Return(False)
 
 
 @coroutine

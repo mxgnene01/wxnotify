@@ -47,17 +47,47 @@ class MessageController(controller.APIBaseController):
             Content = request_dict.get('Content')
             FromUserName = request_dict.get('FromUserName')
             ToUserName = request_dict.get('ToUserName')
-            MsgId = request_dict.get('MsgId')
             CreateTime = request_dict.get('CreateTime')
 
             if MsgType != 'text':
-                self.reply(dict(code=4003, msg='MsgType must is text'))
+                raise
 
             if Content.startswith('bind:'):
                 user_name = Content.strip('bind:')
-                data = yield services.user_bind(user_name, FromUserName)
+                code = yield services.user_bind(user_name, FromUserName)
 
-            self.reply(dict(code=0, data=data))
+                if code:
+                    self.write('''
+                               <xml>
+                                   <ToUserName><![CDATA[{0}]]></ToUserName>
+                                   <FromUserName><![CDATA[{1}]]></FromUserName>
+                                   <CreateTime>{2}</CreateTime>
+                                   <MsgType><![CDATA[{3}]]></MsgType>
+                                   <Content><![CDATA[{4}]]></Content>
+                               </xml>
+                               '''.format(FromUserName, ToUserName, CreateTime, MsgType, "绑定成功"))
+                else:
+                    self.write('''
+                                <xml>
+                                    <ToUserName><![CDATA[{0}]]></ToUserName>
+                                    <FromUserName><![CDATA[{1}]]></FromUserName>
+                                    <CreateTime>{2}</CreateTime>
+                                    <MsgType><![CDATA[{3}]]></MsgType>
+                                    <Content><![CDATA[{4}]]></Content>
+                                </xml>
+                                '''.format(FromUserName, ToUserName, CreateTime, MsgType, "绑定失败，已绑定或绑定失败，请重试一次"))
+                    self.finish()
+            elif Content == 'unbind':
+                code = yield services.unbind(FromUserName)
+                self.write('success')
+                self.finish()
+
+            else:
+                # 直接回复success（推荐方式）, 微信认为接收消息成功
+                self.write('success')
+                self.finish()
 
         except Exception as e:
-            self.reply(dict(code=500, msg='error'))
+            # 直接回复success（推荐方式）, 微信认为接收消息成功
+            self.write('success')
+            self.finish()

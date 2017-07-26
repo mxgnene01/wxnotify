@@ -27,11 +27,6 @@ BIZLOG = logging.getLogger("wxnotify.business")
 
 
 @coroutine
-def get_msg():
-    raise Return(True)
-
-
-@coroutine
 def check_signature(signature, timestamp, nonce, echostr):
     '''
     微信检查服务
@@ -54,17 +49,56 @@ def check_signature(signature, timestamp, nonce, echostr):
 @coroutine
 @with_postgres('master')
 def user_bind(db, user_name, openid):
+    '''
+    
+    Parameters
+    ----------
+    user_name: 用户手机号
+    openid：关注用户的openid
+
+    Returns
+    -------
+    True 和 False ，表示绑定成功和失败
+    '''
     _now = int(time.time())
     sql = "INSERT INTO dl_user_weixin (user_name, openid, ctime, utime) VALUES ('%s', '%s', %s, %s);" % (user_name, openid, _now, _now)
     try:
         cursor = yield db.execute(sql)
-
-        if cursor.rowcount == 0:
-            BIZLOG.error('SAVE WXNOTIFY ERROR: [user_name: %s, openid: %s]' % (user_name, openid))
-            raise Return(False)
-        else:
-            BIZLOG.info('SAVE WXNOTIFY SUCCESS: [user_name: %s, openid: %s, ctime and utime: %s]' % (user_name, openid, _now))
-            raise Return(True)
     except Exception, e:
         BIZLOG.error('error info is : %s' % e.message)
         raise Return(False)
+
+    if cursor.rowcount == 0:
+        BIZLOG.error('SAVE WXNOTIFY ERROR: [user_name: %s, openid: %s]' % (user_name, openid))
+        raise Return(False)
+    else:
+        BIZLOG.info('SAVE WXNOTIFY SUCCESS: [user_name: %s, openid: %s, ctime and utime: %s]' % (user_name, openid, _now))
+        raise Return(True)
+
+
+@coroutine
+@with_postgres('master')
+def unbind(db, openid):
+    '''
+
+    Parameters
+    ----------
+    openid：关注用户的openid
+
+    Returns
+    -------
+    True 和 False ，表示解绑成功和失败
+    '''
+    sql = "DELETE FROM dl_user_weixin WHERE openid = '%s'" % openid
+    try:
+        cursor = yield db.execute(sql)
+    except Exception, e:
+        BIZLOG.error('ERROR INFO IS : %s' % e.message)
+        raise Return(False)
+
+    if cursor.rowcount == 0:
+        BIZLOG.error('UNBIND ERROR: [openid: %s]' % (openid, ))
+        raise Return(False)
+    else:
+        BIZLOG.info('UNBIND SUCCESS: [openid: %s]' % (openid, ))
+        raise Return(True)

@@ -1,5 +1,18 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
+# This piece of code is written by
+#    Meng xiangguo <mxgnene01@gmail.com>
+# with love and passion!
+#
+#        H A P P Y    H A C K I N G !
+#              _____               ______
+#     ____====  ]OO|_n_n__][.      |    |]
+#    [________]_|__|________)<     |MENG|
+#     oo    oo  'oo OOOO-| oo\_   ~o~~~o~'
+# +--+--+--+--+--+--+--+--+--+--+--+--+--+
+#                        2017/7/24  下午5:55
+
 from wxnotify.common.redis import with_redis
 from tornado.gen import coroutine, Task, Return
 from tornado.httpclient import AsyncHTTPClient
@@ -62,6 +75,7 @@ def set_access_token(redis, appid, access_token):
         raise Return(True)
     else:
         raise Return(False)
+
 
 @coroutine
 @with_redis('master')
