@@ -1,0 +1,6 @@
+colorlog==2.7.0
+pbr==1.10.0
+Pillow==3.3.0
+tornado==4.5.1
+yatoredis==0.1.6
+bumpversion==0.5.3
