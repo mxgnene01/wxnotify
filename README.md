@@ -13,7 +13,7 @@ make install
 ### 启动
 
 ```shell
-wxnotify-server --logging_config=/Users/Daling/mxg/git/qa/wxnotify/etc/beta/logging.conf --config_file=/Users/Daling/mxg/git/qa/wxnotify/etc/beta/wxnotify.conf
+wxnotify-server --logging_config=/codepath/wxnotify/etc/beta/logging.conf --config_file=/Users/Daling/mxg/git/qa/wxnotify/etc/beta/wxnotify.conf
 ```
 
 ## 服务号后台配置
